@@ -2,9 +2,7 @@
 #include "rlgl.h"
 #include <stdio.h>
 #include <stddef.h>
-#include <sys/resource.h>
 #include <stdlib.h>
-#include <math.h>
 
 #define BLOCK_SIZE       2.0f
 #define NUM_CHUNKS       7
@@ -171,7 +169,7 @@ void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rect
         };
 }
 
-int game_main(void) {
+int main(void) {
     const float screen_scale = 1.5f;
     int screen_width = 800 * screen_scale;
     int screen_height = 450 * screen_scale;
@@ -272,10 +270,9 @@ int game_main(void) {
                 z < CHUNK_WIDTH-1 && chunk->cubes[(y*CHUNK_AREA)+(x*CHUNK_WIDTH)+(z+1)].not_air) continue;
             rendered++;
             if (!chunk->cubes[i].not_air) continue;
-            if (GetRayCollisionBox(crosshair_ray, chunk->cubes[i].collision_box).hit) {
-                float dist = sqrt(pow(camera.position.x-chunk->cubes[i].loc.x, 2) +
-                                  pow(camera.position.y-chunk->cubes[i].loc.y, 2) +
-                                  pow(camera.position.z-chunk->cubes[i].loc.z, 2));
+            RayCollision collision = GetRayCollisionBox(crosshair_ray, chunk->cubes[i].collision_box);
+            if (collision.hit) {
+                float dist = collision.distance;
                 if (target_block == NULL || dist < target_block_dist) {
                     target_block = &chunk->cubes[i];
                     target_block_dist = dist;
@@ -321,12 +318,4 @@ int game_main(void) {
     free(chunk);
     CloseWindow();
     return 0;
-}
-
-int main(int argc, char **argv) {
-    struct rlimit rlim;
-    getrlimit(RLIMIT_STACK, &rlim);
-    rlim.rlim_cur += CHUNK_SIZE * sizeof(Block);
-    setrlimit(RLIMIT_STACK, &rlim);
-    return game_main();
 }
