@@ -1,6 +1,5 @@
 #include "raylib.h"
 #include "rlgl.h"
-#include "../segfix/segfix.h"
 #include <stdio.h>
 #include <stddef.h>
 #include <sys/resource.h>
@@ -325,7 +324,6 @@ int game_main(void) {
 }
 
 int main(int argc, char **argv) {
-    SEGFIX_INIT(argc, argv);
     struct rlimit rlim;
     getrlimit(RLIMIT_STACK, &rlim);
     rlim.rlim_cur += CHUNK_SIZE * sizeof(Block);
