@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define BLOCK_SIZE       2.0f
 #define NUM_CHUNKS       7
@@ -187,6 +188,8 @@ int main(void) {
     Font font = LoadFontEx("Minecraftia-Regular.ttf", 32, 0, 250);
     Texture2D texture   = LoadTexture("atlas.png");
     Texture2D crosshair = LoadTexture("crosshair.png");
+    Texture2D hotbar    = LoadTexture("hotbar.png");
+    Texture2D selector  = LoadTexture("hotbar_selector.png");
 
     Rectangle grass_texture[6] = {0};
     for (int face = 0; face < 6; face++)
@@ -206,7 +209,8 @@ int main(void) {
     Rectangle bedrock_texture[6] = {0};
     for (int face = 0; face < 6; face++)
         bedrock_texture[face] = get_texture_rect(texture, 1, 1);
-    
+
+    int8_t hotbar_selected = 0; // 0-8
     Chunk *chunk = (Chunk*) malloc(sizeof(Chunk));
     for (int y = 0; y < CHUNK_HEIGHT; y++) {
         Rectangle *texture = (y==CHUNK_HEIGHT-1) ? grass_texture : ((!y) ? bedrock_texture : dirt_texture);
@@ -241,10 +245,18 @@ int main(void) {
                 GetMouseDelta().x*0.1f,
                 GetMouseDelta().y*0.1f,
                 0.0f
-            },
-            GetMouseWheelMove()*BLOCK_SIZE // zoom
+            }, 0.0f
         );
-
+        
+        hotbar_selected += GetMouseWheelMove();
+        for (int i = 0; i < 9; i++) {
+            if (IsKeyPressed(KEY_ONE + i))
+                hotbar_selected = i;
+        }
+        if (hotbar_selected > 8)
+            hotbar_selected = hotbar_selected % 9;
+        if (hotbar_selected < 0)
+            hotbar_selected = 9-(-hotbar_selected % 9);
         BeginDrawing();
         ClearBackground((Color){0x78, 0xA7, 0xFF});
         BeginMode3D(camera);
@@ -311,6 +323,15 @@ int main(void) {
                 (Vector2){screen_width/2-crosshair.width*0.05/2,
                           screen_height/2-crosshair.height*0.05/2},
                 0, 0.05, GRAY);
+        
+        DrawTextureEx(hotbar, 
+                (Vector2){screen_width/2-hotbar.width*1.5f/2,
+                          screen_height-hotbar.height*1.5f-10},
+                0, 1.5f, WHITE);
+        DrawTextureEx(selector, 
+                (Vector2){screen_width/2-hotbar.width*1.5f/2 + hotbar_selected * selector.width*2.48f - 1,
+                          screen_height-hotbar.height*1.5f-11},
+                0, 3, WHITE);
 
         EndDrawing();
     }
