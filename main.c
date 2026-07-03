@@ -170,6 +170,12 @@ void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rect
         };
 }
 
+// for blocks with all 6 sides with the same texture
+void load_basic_block_texture(Texture atlas, int atlas_x, int atlas_y, Rectangle *buf) {
+    for (int face = 0; face < 6; face++)
+        buf[face] = get_texture_rect(atlas, atlas_x, atlas_y);
+}
+
 int main(void) {
     const float screen_scale = 1.5f;
     int screen_width = 800 * screen_scale;
@@ -191,25 +197,15 @@ int main(void) {
     Texture2D hotbar    = LoadTexture("hotbar.png");
     Texture2D selector  = LoadTexture("hotbar_selector.png");
 
-    Rectangle grass_texture[6] = {0};
-    for (int face = 0; face < 6; face++)
-        grass_texture[face] = get_texture_rect(texture, 3, 0);
+    Rectangle dirt_texture[6], cobblestone_texture[6], bedrock_texture[6], grass_texture[6];
+    load_basic_block_texture(texture, 3, 0, grass_texture);
+    load_basic_block_texture(texture, 2, 0, dirt_texture);
+    load_basic_block_texture(texture, 0, 1, cobblestone_texture);
+    load_basic_block_texture(texture, 1, 1, bedrock_texture);
+    
     grass_texture[FACE_TOP] = get_texture_rect(texture, 8, 2);
     grass_texture[FACE_BOTTOM] = get_texture_rect(texture, 2, 0);
-
-    Rectangle dirt_texture[6] = {0};
-    for (int face = 0; face < 6; face++)
-        dirt_texture[face] = get_texture_rect(texture, 2, 0);
     
-    Rectangle cobblestone_texture[6] = {0};
-    for (int face = 0; face < 6; face++)
-        cobblestone_texture[face] = get_texture_rect(texture, 0, 1);
-    (void) cobblestone_texture;
-    
-    Rectangle bedrock_texture[6] = {0};
-    for (int face = 0; face < 6; face++)
-        bedrock_texture[face] = get_texture_rect(texture, 1, 1);
-
     int8_t hotbar_selected = 0; // 0-8
     Chunk *chunk = (Chunk*) malloc(sizeof(Chunk));
     for (int y = 0; y < CHUNK_HEIGHT; y++) {
