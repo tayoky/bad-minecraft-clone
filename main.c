@@ -112,7 +112,7 @@ Faces get_face_collisions(Ray crosshair_ray, Block *target_block, Camera *camera
 }
 
 // again this is disgusting, TODO move to another file so i dont have to look at it
-void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rectangle *cobblestone_texture) {
+void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rectangle *texture) {
     Block *new_block;
     switch (collision_face) {
     case FACE_TOP:
@@ -162,7 +162,7 @@ void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rect
         exit(-1);
     }
     new_block->not_air = true;
-    new_block->texture = cobblestone_texture;
+    new_block->texture = texture;
     new_block->collision_box = 
         (BoundingBox) {
             (Vector3){new_block->loc.x-BLOCK_SIZE/2, new_block->loc.y-BLOCK_SIZE/2, new_block->loc.z-BLOCK_SIZE/2},
@@ -197,16 +197,32 @@ int main(void) {
     Texture2D hotbar    = LoadTexture("hotbar.png");
     Texture2D selector  = LoadTexture("hotbar_selector.png");
 
-    Rectangle dirt_texture[6], cobblestone_texture[6], bedrock_texture[6], grass_texture[6];
+    // hotbar textures: stone, dirt, oak planks, cobblestone, sand, gravel, oak logs, bricks, glowstone
+    Rectangle dirt_texture[6], cobblestone_texture[6], bedrock_texture[6], grass_texture[6], glowstone_texture[6], 
+              stone_texture[6], oak_planks_texture[6], sand_texture[6], gravel_texture[6], oak_log_texture[6], bricks_texture[6];
     load_basic_block_texture(texture, 3, 0, grass_texture);
     load_basic_block_texture(texture, 2, 0, dirt_texture);
     load_basic_block_texture(texture, 0, 1, cobblestone_texture);
     load_basic_block_texture(texture, 1, 1, bedrock_texture);
+    load_basic_block_texture(texture, 9, 6, glowstone_texture);
+    load_basic_block_texture(texture, 1, 0, stone_texture);
+    load_basic_block_texture(texture, 4, 0, oak_planks_texture);
+    load_basic_block_texture(texture, 2, 1, sand_texture);
+    load_basic_block_texture(texture, 3, 1, gravel_texture);
+    load_basic_block_texture(texture, 4, 1, oak_log_texture);
+    load_basic_block_texture(texture, 7, 0, bricks_texture);
     
     grass_texture[FACE_TOP] = get_texture_rect(texture, 8, 2);
     grass_texture[FACE_BOTTOM] = get_texture_rect(texture, 2, 0);
+
+    oak_log_texture[FACE_TOP] = oak_log_texture[FACE_BOTTOM] = get_texture_rect(texture, 5, 1);
     
     int8_t hotbar_selected = 0; // 0-8
+    Rectangle *hotbar_slots[9] = {
+        stone_texture, dirt_texture, oak_planks_texture, cobblestone_texture,
+        sand_texture, gravel_texture, oak_log_texture, bricks_texture, glowstone_texture
+    };
+
     Chunk *chunk = (Chunk*) malloc(sizeof(Chunk));
     for (int y = 0; y < CHUNK_HEIGHT; y++) {
         Rectangle *texture = (y==CHUNK_HEIGHT-1) ? grass_texture : ((!y) ? bedrock_texture : dirt_texture);
@@ -293,11 +309,11 @@ int main(void) {
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 target_block->not_air = false;
 
-            if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && hotbar_slots[hotbar_selected] != NULL) {
                 // point a ray at each face, check collision, and place on the face it collides with
                 // which is closest to the camera
                 Faces collision_face = get_face_collisions(crosshair_ray, target_block, &camera);
-                place_on_face(collision_face, chunk, target_block, cobblestone_texture);
+                place_on_face(collision_face, chunk, target_block, hotbar_slots[hotbar_selected]);
             }
         }
 
@@ -328,7 +344,13 @@ int main(void) {
                 (Vector2){screen_width/2-hotbar.width*1.5f/2 + hotbar_selected * selector.width*2.48f - 1,
                           screen_height-hotbar.height*1.5f-11},
                 0, 3, WHITE);
-
+        for (int i = 0; i < 9; i++) {
+            if (hotbar_slots[i] == NULL) continue;
+            Rectangle dest_rec = {screen_width/2-hotbar.width*1.5f/2 + i * selector.width*2.5f - 1 + 18, // x
+                                 screen_height-hotbar.height*1.5f-11 + 18, // y
+                                 35, 35};
+            DrawTexturePro(texture, *hotbar_slots[i], dest_rec, (Vector2){0, 0}, 0.0f, WHITE);
+        }
         EndDrawing();
     }
 
