@@ -59,3 +59,19 @@ Chunk *get_chunk(long x, long z) {
 	if (chunk) return chunk;
 	return generate_chunk(x, z);
 }
+
+void mark_chunk_dirty(Chunk *chunk) {
+	chunk->flags |= CHUNK_DIRTY;
+}
+
+void mark_block_dirty(long x, long y, long z) {
+	(void)y;
+	long chunk_x = x / CHUNK_WIDTH;
+	long chunk_z = z / CHUNK_WIDTH;
+	for (int x_off=-1; x_off<2; x_off++) {
+		for (int z_off=-1; z_off<2; z_off++) {
+			Chunk *chunk = raw_get_chunk(chunk_x + x_off, chunk_z + z_off);
+			if (chunk) mark_chunk_dirty(chunk);
+		}
+	}
+}
