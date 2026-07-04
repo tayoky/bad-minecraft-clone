@@ -17,7 +17,8 @@
 typedef enum {
     FACE_FRONT, FACE_BACK,
     FACE_TOP, FACE_BOTTOM,
-    FACE_RIGHT, FACE_LEFT
+    FACE_RIGHT, FACE_LEFT,
+    FACE_NONE
 } Faces;
 
 void DrawCubeTextureRec(Texture2D texture, Rectangle *source, Vector3 position, float width, float height, float length, Color color);
@@ -108,7 +109,7 @@ Faces get_face_collisions(Ray crosshair_ray, Block *target_block, Camera *camera
     else if (collides_right.hit  && min_dist == collides_right.distance)  return FACE_RIGHT;
     else if (collides_front.hit  && min_dist == collides_front.distance)  return FACE_FRONT;
     else if (collides_back.hit   && min_dist == collides_back.distance)   return FACE_BACK;
-    else exit(-1);
+    else return FACE_NONE;
 }
 
 // again this is disgusting, TODO move to another file so i dont have to look at it
@@ -158,8 +159,7 @@ void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rect
         new_block->loc.x -= BLOCK_SIZE;
         break;
     default:
-        printf("only top face supported as of yet (TODO)\n");
-        exit(-1);
+        return;
     }
     new_block->not_air = true;
     new_block->texture = texture;
@@ -245,6 +245,7 @@ int main(void) {
     DisableCursor();
     SetTargetFPS(80);
 
+    int num_blocks = CHUNK_SIZE;
     while (!WindowShouldClose()) {
         UpdateCamera(&camera, CAMERA_FIRST_PERSON);
         UpdateCameraPro(&camera,
@@ -292,8 +293,8 @@ int main(void) {
                 x < CHUNK_WIDTH-1 && chunk->cubes[(y*CHUNK_AREA)+((x+1)*CHUNK_WIDTH)+z].not_air &&
                 z > 0 && chunk->cubes[(y*CHUNK_AREA)+(x*CHUNK_WIDTH)+(z-1)].not_air &&
                 z < CHUNK_WIDTH-1 && chunk->cubes[(y*CHUNK_AREA)+(x*CHUNK_WIDTH)+(z+1)].not_air) continue;
-            rendered++;
             if (!chunk->cubes[i].not_air) continue;
+            rendered++;
             RayCollision collision = GetRayCollisionBox(crosshair_ray, chunk->cubes[i].collision_box);
             if (collision.hit) {
                 float dist = collision.distance;
@@ -306,25 +307,26 @@ int main(void) {
         }
         if (target_block != NULL && target_block_dist <= 5 * BLOCK_SIZE) {
             DrawCubeWires(target_block->loc, BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, WHITE);     
-            if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                num_blocks--;
                 target_block->not_air = false;
+            }
 
             if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && hotbar_slots[hotbar_selected] != NULL) {
                 // point a ray at each face, check collision, and place on the face it collides with
                 // which is closest to the camera
                 Faces collision_face = get_face_collisions(crosshair_ray, target_block, &camera);
                 place_on_face(collision_face, chunk, target_block, hotbar_slots[hotbar_selected]);
+                num_blocks++;
             }
         }
 
         EndMode3D();
         const char *text = TextFormat("%i/%i cubes rendered\n"
                                       "FPS: %i\n"
-                                      "XYZ: %.0f,%.0f,%.0f\n"
-                                      "Target: %.0f,%.0f,%.0f\n",
-                                        rendered, CHUNK_SIZE, GetFPS(),
-                                        camera.position.x/2, camera.position.y/2, camera.position.z/2,
-                                        camera.target.x/2, camera.target.y/2, camera.target.z/2);
+                                      "XYZ: %.0f,%.0f,%.0f\n",
+                                        rendered, num_blocks, GetFPS(),
+                                        camera.position.x/2, camera.position.y/2, camera.position.z/2);
 
         DrawTextEx(font, text, (Vector2){9, 11}, 24, 1, GRAY);
         DrawTextEx(font, text, (Vector2){8, 12}, 24, 1, GRAY);
