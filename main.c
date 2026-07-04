@@ -119,8 +119,9 @@ int main(void) {
 	long block_z = camera.position.z / BLOCK_SIZE;
 	long chunk_x, chunk_z;
 	get_chunk_coord_for_block(block_x, block_y, block_z, &chunk_x, &chunk_z);
-	for (int x=-5; x<11; x++) {
-		for (int z=-5; z<11; z++) {
+	int render_distance = 7;
+	for (int x=-render_distance; x<=render_distance; x++) {
+		for (int z=-render_distance; z<=render_distance; z++) {
 			Chunk *chunk = get_chunk(chunk_x + x, chunk_z + z);
 			draw_chunk(chunk);
 		}
