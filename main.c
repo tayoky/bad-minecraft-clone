@@ -184,7 +184,7 @@ int main(void) {
     InitWindow(screen_width, screen_height, "game");
 
     Camera3D camera = { 0 };
-    camera.position = (Vector3){ 10.0f, CHUNK_HEIGHT * 2 + BLOCK_SIZE * 1.0f, 10.0f };
+    camera.position = (Vector3){ 10.0f, CHUNK_HEIGHT * BLOCK_SIZE + BLOCK_SIZE * 1.0f, 10.0f };
     camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
     camera.fovy = 70.0f; 
@@ -355,6 +355,11 @@ int main(void) {
     }
 
     free(chunk);
+    UnloadTexture(texture);
+    UnloadTexture(crosshair);
+    UnloadTexture(hotbar);
+    UnloadTexture(selector);
+    UnloadFont(font);
     CloseWindow();
     return 0;
 }
