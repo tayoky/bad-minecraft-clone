@@ -5,7 +5,7 @@
 #include "game.h"
 
 static bool check_air(Chunk *chunk, long x, long y, long z) {
-	Block *block = get_block(chunk, x, y, z);
+	Block *block = get_block_in_chunk(chunk, x, y, z);
 	if (!block) {
 		// TODO : check other chunk
 		return true;
@@ -142,7 +142,7 @@ static void generate_chunk_mesh(Chunk *chunk) {
 	for (int z=0; z<CHUNK_WIDTH; z++) {
 		for (int x=0; x<CHUNK_WIDTH; x++) {
 			for (int y=0; y<CHUNK_HEIGHT; y++) {
-				Block *block = get_block(chunk, x, y, z);
+				Block *block = get_block_in_chunk(chunk, x, y, z);
 				generate_block_mesh(chunk, block, x, y, z);
 			}
 		}

@@ -55,10 +55,12 @@ typedef enum {
 
 extern Material block_material;
 extern Rectangle texture_uvs[BLOCK_TYPES_COUNT][6];
-Block *get_block(Chunk *chunk, long x, long y, long z);
+Block *get_block_in_chunk(Chunk *chunk, long x, long y, long z);
 Chunk *get_chunk(long x, long z);
 Chunk *raw_get_chunk(long x, long z);
 void mark_chunk_dirty(Chunk *chunk);
 void mark_block_dirty(long x, long y, long z);
+void get_chunk_coord_for_block(long x, long y, long z, long *chunk_x, long *chunk_z);
+Chunk *get_chunk_for_block(long x, long y, long z);
 void draw_chunk(Chunk *chunk);
 Block *place_on_face(Face collision_face, Chunk *chunk, Block *target_block, BlockType type);

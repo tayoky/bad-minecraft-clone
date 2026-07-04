@@ -80,10 +80,10 @@ int main(void) {
     int blocks_placed = 0;
     int num_faces = CHUNK_SIZE * 6;
     while (!WindowShouldClose()) {
-        UpdateCamera(&camera, CAMERA_FIRST_PERSON);
+        //UpdateCamera(&camera, CAMERA_FIRST_PERSON);
         UpdateCameraPro(&camera,
             (Vector3){ // wasd
-                IsKeyDown(KEY_W)*0.1f - IsKeyDown(KEY_S)*0.1f,
+                (IsKeyDown(KEY_W)||IsKeyDown(KEY_UP))*0.1f - IsKeyDown(KEY_S)*0.1f,
                 IsKeyDown(KEY_D)*0.1f - IsKeyDown(KEY_A)*0.1f,
                 IsKeyDown(KEY_SPACE)*0.3f - IsKeyDown(KEY_LEFT_SHIFT)*0.3f
             },
@@ -114,9 +114,14 @@ int main(void) {
         Block *target_block = NULL;
         float target_block_dist = 0;
 	// TODO : draw chunks around player
-	for (int x=0; x<10; x++) {
-		for (int z=0; z<10; z++) {
-			Chunk *chunk = get_chunk(x, z);
+	long block_x = camera.position.x / BLOCK_SIZE;
+	long block_y = camera.position.y / BLOCK_SIZE;
+	long block_z = camera.position.z / BLOCK_SIZE;
+	long chunk_x, chunk_z;
+	get_chunk_coord_for_block(block_x, block_y, block_z, &chunk_x, &chunk_z);
+	for (int x=-5; x<11; x++) {
+		for (int z=-5; z<11; z++) {
+			Chunk *chunk = get_chunk(chunk_x + x, chunk_z + z);
 			draw_chunk(chunk);
 		}
 	}
