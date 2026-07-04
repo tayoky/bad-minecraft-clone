@@ -74,34 +74,6 @@ int main(void) {
         BLOCK_SAND, BLOCK_GRAVEL, BLOCK_OAK_LOG, BLOCK_BRICKS, BLOCK_GLOWSTONE,
     };
 
-    Chunk *chunk = (Chunk*) calloc(1, sizeof(Chunk));
-    chunk->flags = CHUNK_DIRTY;
-    for (int y = 0; y < CHUNK_HEIGHT; y++) {
-        BlockType type;
-	if (y > FLOOR_HEIGHT) {
-	    type = BLOCK_AIR;
-	} else if (y == FLOOR_HEIGHT) {
-	    type = BLOCK_GRASS;
-	} else if (y > 0) {
-	    type = BLOCK_DIRT;
-	} else {
-	    type = BLOCK_BEDROCK;
-	}
-        for (int x = 0; x < CHUNK_WIDTH; x++) {
-            for (int z = 0; z < CHUNK_WIDTH; z++) {
-                Block *cube = &chunk->cubes[(y*CHUNK_AREA)+(x*CHUNK_WIDTH)+z];
-                cube->loc = (Vector3){x*BLOCK_SIZE, y*BLOCK_SIZE, z*BLOCK_SIZE};
-                cube->loc_cube = (Vector3){x, y, z};
-                cube->type = type;
-                cube->collision_box = 
-                    (BoundingBox) {
-                        (Vector3){cube->loc.x-BLOCK_SIZE/2, cube->loc.y-BLOCK_SIZE/2, cube->loc.z-BLOCK_SIZE/2},
-                        (Vector3){cube->loc.x+BLOCK_SIZE/2, cube->loc.y+BLOCK_SIZE/2, cube->loc.z+BLOCK_SIZE/2}
-                    };
-            }
-        }
-    }
-
     DisableCursor();
     SetTargetFPS(80);
 
@@ -141,7 +113,13 @@ int main(void) {
         int rendered = 0;
         Block *target_block = NULL;
         float target_block_dist = 0;
-	draw_chunk(chunk);
+	// TODO : draw chunks around player
+	for (int x=0; x<10; x++) {
+		for (int z=0; z<10; z++) {
+			Chunk *chunk = get_chunk(x, z);
+			draw_chunk(chunk);
+		}
+	}
         if (target_block != NULL && target_block_dist <= 5 * BLOCK_SIZE) {
             DrawCubeWires(target_block->loc, BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, WHITE);     
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -150,7 +128,7 @@ int main(void) {
 		// TODO : mark dirty
             }
 
-            if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && hotbar_slots[hotbar_selected] != BLOCK_NONE) {
+            /*if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && hotbar_slots[hotbar_selected] != BLOCK_NONE) {
                 // point a ray at each face, check collision, and place on the face it collides with
                 // which is closest to the camera
                 Face collision_face = get_face_collisions(crosshair_ray, target_block, &camera);
@@ -161,7 +139,7 @@ int main(void) {
                 }
                 blocks_placed++;
                 num_faces += 6;
-            }
+            }*/
         }
 
         EndMode3D();
@@ -200,7 +178,6 @@ int main(void) {
         EndDrawing();
     }
 
-    free(chunk);
     UnloadTexture(texture);
     UnloadTexture(crosshair);
     UnloadTexture(hotbar);

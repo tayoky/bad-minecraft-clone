@@ -35,11 +35,12 @@ typedef struct {
     BlockType type;
 } Block;
 
-typedef struct {
+typedef struct chunk {
     Block cubes[CHUNK_SIZE];
     long x;
     long z;
     Mesh mesh;
+    struct chunk *next;
     uint8_t flags;
 } Chunk;
 
@@ -56,5 +57,6 @@ extern Material block_material;
 extern Rectangle texture_uvs[BLOCK_TYPES_COUNT][6];
 Block *get_block(Chunk *chunk, long x, long y, long z);
 Chunk *get_chunk(long x, long z);
+Chunk *raw_get_chunk(long x, long z);
 void draw_chunk(Chunk *chunk);
 Block *place_on_face(Face collision_face, Chunk *chunk, Block *target_block, BlockType type);
