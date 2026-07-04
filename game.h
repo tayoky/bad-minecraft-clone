@@ -5,7 +5,7 @@
 #define BLOCK_SIZE       2.0f
 #define NUM_CHUNKS       6
 #define CHUNK_WIDTH      16
-#define CHUNK_HEIGHT     40
+#define CHUNK_HEIGHT     128
 #define CHUNK_AREA       (CHUNK_WIDTH * CHUNK_WIDTH) 
 #define CHUNK_SIZE       (CHUNK_AREA * CHUNK_HEIGHT)
 #define FLOOR_HEIGHT 10

@@ -15,19 +15,24 @@ static Chunk *generate_chunk(long x, long z) {
     chunk->flags = CHUNK_DIRTY;
     chunk->x = x;
     chunk->z = z;
-    for (int y = 0; y < CHUNK_HEIGHT; y++) {
-        BlockType type;
-	if (y > FLOOR_HEIGHT) {
-	    type = BLOCK_AIR;
-	} else if (y == FLOOR_HEIGHT) {
-	    type = BLOCK_GRASS;
-	} else if (y > 0) {
-	    type = BLOCK_DIRT;
-	} else {
-	    type = BLOCK_BEDROCK;
-	}
-        for (int x = 0; x < CHUNK_WIDTH; x++) {
-            for (int z = 0; z < CHUNK_WIDTH; z++) {
+
+    Image noise = GenImagePerlinNoise(CHUNK_WIDTH, CHUNK_WIDTH, CHUNK_WIDTH * x, CHUNK_WIDTH * z, 0.05f);
+    Color *pixels = LoadImageColors(noise);
+
+    for (int x = 0; x < CHUNK_WIDTH; x++) {
+        for (int z = 0; z < CHUNK_WIDTH; z++) {
+	    int height = pixels[z * CHUNK_WIDTH + x].r * 64.0f / 255.0f;
+            for (int y = 0; y < CHUNK_HEIGHT; y++) {
+                BlockType type;
+		if (y > height) {
+	            type = BLOCK_AIR;
+	        } else if (y == height) {
+	            type = BLOCK_GRASS;
+		} else if (y > 0) {
+		     type = BLOCK_DIRT;
+		} else {
+	             type = BLOCK_BEDROCK;
+		}
                 Block *block = get_block_in_chunk(chunk, x, y, z);
                 block->loc = (Vector3){x*BLOCK_SIZE, y*BLOCK_SIZE, z*BLOCK_SIZE};
                 block->loc_cube = (Vector3){x, y, z};
@@ -36,10 +41,12 @@ static Chunk *generate_chunk(long x, long z) {
                     (BoundingBox) {
                         (Vector3){block->loc.x-BLOCK_SIZE/2, block->loc.y-BLOCK_SIZE/2, block->loc.z-BLOCK_SIZE/2},
                         (Vector3){block->loc.x+BLOCK_SIZE/2, block->loc.y+BLOCK_SIZE/2, block->loc.z+BLOCK_SIZE/2}
-                    };
+                    }; 
             }
         }
     }
+    UnloadImageColors(pixels);
+    UnloadImage(noise);
     chunk->next = map;
     map = chunk;
     return chunk;
