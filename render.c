@@ -4,10 +4,29 @@
 #include "rlgl.h"
 #include "game.h"
 
-static bool check_air(Chunk *chunk, long x, long y, long z) {
-	Block *block = get_block_in_chunk(chunk, x, y, z);
+static bool check_air(Chunk *chunks[3][3], long x, long y, long z) {
+	long chunk_x = 1;
+	long chunk_z = 1;
+
+	// check chuncks around
+	if (x < 0) {
+		x += CHUNK_WIDTH;
+		chunk_x--;
+	} else if (x >= CHUNK_WIDTH) {
+		x -= CHUNK_WIDTH;
+		chunk_x++;
+	}
+	if (z < 0) {
+		z += CHUNK_WIDTH;
+		chunk_z--;
+	} else if (z >= CHUNK_WIDTH) {
+		z -= CHUNK_WIDTH;
+		chunk_z++;
+	}
+
+	Block *block = get_block_in_chunk(chunks[chunk_x][chunk_z], x, y, z);
 	if (!block) {
-		// TODO : check other chunk
+		// no block so it's air
 		return true;
 	}
 	return block->type == BLOCK_AIR;
@@ -101,19 +120,19 @@ static void add_face(Mesh *mesh, Face face, Vector3 pos, Vector2 *uv1, Vector2 *
 	mesh->indices[t_index * 3 + 5] = v_index + 3;
 }
 
-static void generate_block_mesh(Chunk *chunk, Block *block, long x, long y, long z){
+static void generate_block_mesh(Chunk *chunk, Chunk *chunks[3][3], Block *block, long x, long y, long z){
     if (block->type == BLOCK_AIR) return;
     Texture2D *texture = &block_material.maps[MATERIAL_MAP_DIFFUSE].texture;
     float tex_width = (float)texture->width;
     float tex_height = (float)texture->height;
 
     bool sides_air[6];
-    sides_air[FACE_LEFT]    = check_air(chunk, x-1, y, z);
-    sides_air[FACE_RIGHT]   = check_air(chunk, x+1, y, z);
-    sides_air[FACE_BOTTOM]  = check_air(chunk, x, y-1, z);
-    sides_air[FACE_TOP]     = check_air(chunk, x, y+1, z);
-    sides_air[FACE_BACK]    = check_air(chunk, x, y, z-1);
-    sides_air[FACE_FRONT]   = check_air(chunk, x, y, z+1);
+    sides_air[FACE_LEFT]    = check_air(chunks, x-1, y, z);
+    sides_air[FACE_RIGHT]   = check_air(chunks, x+1, y, z);
+    sides_air[FACE_BOTTOM]  = check_air(chunks, x, y-1, z);
+    sides_air[FACE_TOP]     = check_air(chunks, x, y+1, z);
+    sides_air[FACE_BACK]    = check_air(chunks, x, y, z-1);
+    sides_air[FACE_FRONT]   = check_air(chunks, x, y, z+1);
 
     Vector3 position = {x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE};
 
@@ -139,11 +158,20 @@ static void generate_chunk_mesh(Chunk *chunk) {
 	UnloadMesh(chunk->mesh);
 	chunk->mesh.vertexCount = 0;
 	chunk->mesh.triangleCount = 0;
+
+	// get chunk on the sides
+	Chunk *chunks[3][3];
+	for (int x=0; x<3; x++) {
+		for (int z=0; z<3; z++) {
+			chunks[x][z] = get_chunk(chunk->x + x - 1, chunk->z + z - 1);
+		}
+	}
+
 	for (int z=0; z<CHUNK_WIDTH; z++) {
 		for (int x=0; x<CHUNK_WIDTH; x++) {
 			for (int y=0; y<CHUNK_HEIGHT; y++) {
 				Block *block = get_block_in_chunk(chunk, x, y, z);
-				generate_block_mesh(chunk, block, x, y, z);
+				generate_block_mesh(chunk, chunks, block, x, y, z);
 			}
 		}
 	}
