@@ -3,9 +3,9 @@
 #include "stdint.h"
 
 #define BLOCK_SIZE       2.0f
-#define NUM_CHUNKS       7
+#define NUM_CHUNKS       6
 #define CHUNK_WIDTH      16*NUM_CHUNKS
-#define CHUNK_HEIGHT     20
+#define CHUNK_HEIGHT     10
 #define MAX_BUILD_HEIGHT 40
 #define CHUNK_AREA       (CHUNK_WIDTH * CHUNK_WIDTH) 
 #define CHUNK_SIZE       (CHUNK_AREA * CHUNK_HEIGHT)
