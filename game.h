@@ -1,5 +1,6 @@
 #pragma once
 #include "raylib.h"
+#include "stdint.h"
 
 #define BLOCK_SIZE       2.0f
 #define NUM_CHUNKS       7
@@ -16,6 +17,7 @@ typedef struct {
     Rectangle *texture;
     BoundingBox collision_box;
     bool not_air;
+    uint8_t light_level; // 0-15
 } Block;
 
 typedef struct {

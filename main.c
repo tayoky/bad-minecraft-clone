@@ -2,13 +2,14 @@
 #include "rlgl.h"
 #include "game.h"
 #include <stdio.h>
+#include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
 
 void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rectangle *texture);
 Faces get_face_collisions(Ray crosshair_ray, Block *target_block, Camera *camera);
-void DrawCubeTextureRec(Texture2D texture, Rectangle *source, Vector3 position, float width, float height, float length, Color color);
+uint8_t DrawCubeTextureRec(Texture2D texture, Rectangle *source, Vector3 position, float width, float height, float length, Color color, bool *sides_not_air);
 
 Rectangle get_texture_rect(Texture2D texture, int x, int y) {
     int cube_sz = texture.width/16;
@@ -94,7 +95,7 @@ int main(void) {
     DisableCursor();
     SetTargetFPS(80);
 
-    int num_blocks = CHUNK_SIZE;
+    int num_faces = CHUNK_SIZE * 6;
     while (!WindowShouldClose()) {
         UpdateCamera(&camera, CAMERA_FIRST_PERSON);
         UpdateCameraPro(&camera,
@@ -135,14 +136,20 @@ int main(void) {
             int x = this_cube.loc_cube.x;
             int y = this_cube.loc_cube.y;
             int z = this_cube.loc_cube.z;
-            if (y < MAX_BUILD_HEIGHT-1 && chunk->cubes[((y+1)*CHUNK_AREA)+(x*CHUNK_WIDTH)+z].not_air &&
-                y > 0 && chunk->cubes[((y-1)*CHUNK_AREA)+(x*CHUNK_WIDTH)+z].not_air &&
-                x > 0 && chunk->cubes[(y*CHUNK_AREA)+((x-1)*CHUNK_WIDTH)+z].not_air &&
-                x < CHUNK_WIDTH-1 && chunk->cubes[(y*CHUNK_AREA)+((x+1)*CHUNK_WIDTH)+z].not_air &&
-                z > 0 && chunk->cubes[(y*CHUNK_AREA)+(x*CHUNK_WIDTH)+(z-1)].not_air &&
-                z < CHUNK_WIDTH-1 && chunk->cubes[(y*CHUNK_AREA)+(x*CHUNK_WIDTH)+(z+1)].not_air) continue;
-            if (!chunk->cubes[i].not_air) continue;
-            rendered++;
+            bool sides_not_air[6] = {0};
+            sides_not_air[FACE_FRONT ] = z < CHUNK_WIDTH-1 && chunk->cubes[(y*CHUNK_AREA)+(x*CHUNK_WIDTH)+(z+1)].not_air;
+            sides_not_air[FACE_BACK  ] = z > 0 && chunk->cubes[(y*CHUNK_AREA)+(x*CHUNK_WIDTH)+(z-1)].not_air;
+            sides_not_air[FACE_RIGHT ] = x < CHUNK_WIDTH-1 && chunk->cubes[(y*CHUNK_AREA)+((x+1)*CHUNK_WIDTH)+z].not_air;
+            sides_not_air[FACE_LEFT  ] = x > 0 && chunk->cubes[(y*CHUNK_AREA)+((x-1)*CHUNK_WIDTH)+z].not_air;
+            sides_not_air[FACE_BOTTOM] = y > 0 && chunk->cubes[((y-1)*CHUNK_AREA)+(x*CHUNK_WIDTH)+z].not_air;
+            sides_not_air[FACE_TOP   ] = y < MAX_BUILD_HEIGHT-1 && chunk->cubes[((y+1)*CHUNK_AREA)+(x*CHUNK_WIDTH)+z].not_air;
+            bool face_is_visible = false;
+            for (uint8_t face = 0; face < FACE_NONE; face++) {
+                if (!sides_not_air[face]) continue;
+                face_is_visible = true;
+                break;
+            }
+            if (!chunk->cubes[i].not_air || !face_is_visible) continue;
             RayCollision collision = GetRayCollisionBox(crosshair_ray, chunk->cubes[i].collision_box);
             if (collision.hit) {
                 float dist = collision.distance;
@@ -151,12 +158,13 @@ int main(void) {
                     target_block_dist = dist;
                 }
             }
-            DrawCubeTextureRec(texture, chunk->cubes[i].texture, chunk->cubes[i].loc, BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, RAYWHITE);
+            rendered += DrawCubeTextureRec(texture, chunk->cubes[i].texture, chunk->cubes[i].loc,
+                    BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, WHITE, sides_not_air);
         }
         if (target_block != NULL && target_block_dist <= 5 * BLOCK_SIZE) {
             DrawCubeWires(target_block->loc, BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, WHITE);     
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                num_blocks--;
+                num_faces -= 6;
                 target_block->not_air = false;
             }
 
@@ -165,15 +173,15 @@ int main(void) {
                 // which is closest to the camera
                 Faces collision_face = get_face_collisions(crosshair_ray, target_block, &camera);
                 place_on_face(collision_face, chunk, target_block, hotbar_slots[hotbar_selected]);
-                num_blocks++;
+                num_faces += 6;
             }
         }
 
         EndMode3D();
-        const char *text = TextFormat("%i/%i cubes rendered\n"
+        const char *text = TextFormat("%i/%i faces rendered (%.1f%)\n"
                                       "FPS: %i\n"
                                       "XYZ: %.0f,%.0f,%.0f\n",
-                                        rendered, num_blocks, GetFPS(),
+                                        rendered, num_faces, ((float)rendered)/((float)num_faces)*100, GetFPS(),
                                         camera.position.x/2, camera.position.y/2, camera.position.z/2);
 
         DrawTextEx(font, text, (Vector2){9, 11}, 24, 1, GRAY);
