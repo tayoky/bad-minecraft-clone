@@ -1,4 +1,5 @@
 #include "game.h"
+#include <stddef.h>
 
 /* disgusting code in another file so i dont have to look at it
  * it's used for placing blocks and stuff like finding which face is being looked at */
@@ -70,7 +71,7 @@ Faces get_face_collisions(Ray crosshair_ray, Block *target_block, Camera *camera
     else return FACE_NONE;
 }
 
-void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rectangle *texture) {
+Block *place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rectangle *texture) {
     Block *new_block;
     switch (collision_face) {
     case FACE_TOP:
@@ -116,7 +117,7 @@ void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rect
         new_block->loc.x -= BLOCK_SIZE;
         break;
     default:
-        return;
+        return NULL;
     }
     new_block->not_air = true;
     new_block->texture = texture;
@@ -125,4 +126,5 @@ void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rect
             (Vector3){new_block->loc.x-BLOCK_SIZE/2, new_block->loc.y-BLOCK_SIZE/2, new_block->loc.z-BLOCK_SIZE/2},
             (Vector3){new_block->loc.x+BLOCK_SIZE/2, new_block->loc.y+BLOCK_SIZE/2, new_block->loc.z+BLOCK_SIZE/2}
         };
+    return new_block;
 }

@@ -7,9 +7,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-void place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rectangle *texture);
+Block *place_on_face(Faces collision_face, Chunk *chunk, Block *target_block, Rectangle *texture);
 Faces get_face_collisions(Ray crosshair_ray, Block *target_block, Camera *camera);
-uint8_t DrawCubeTextureRec(Texture2D texture, Rectangle *source, Vector3 position, float width, float height, float length, Color color, bool *sides_not_air);
+uint8_t DrawCubeTextureRec(Texture2D texture, Rectangle *source, Vector3 position, float width, float height, float length,
+        Color color, bool *sides_not_air, int light);
 
 Rectangle get_texture_rect(Texture2D texture, int x, int y) {
     int cube_sz = texture.width/16;
@@ -95,6 +96,7 @@ int main(void) {
     DisableCursor();
     SetTargetFPS(80);
 
+    int blocks_placed = 0;
     int num_faces = CHUNK_SIZE * 6;
     while (!WindowShouldClose()) {
         UpdateCamera(&camera, CAMERA_FIRST_PERSON);
@@ -159,7 +161,7 @@ int main(void) {
                 }
             }
             rendered += DrawCubeTextureRec(texture, chunk->cubes[i].texture, chunk->cubes[i].loc,
-                    BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, WHITE, sides_not_air);
+                    BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, WHITE, sides_not_air, chunk->cubes[i].light_level);
         }
         if (target_block != NULL && target_block_dist <= 5 * BLOCK_SIZE) {
             DrawCubeWires(target_block->loc, BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, WHITE);     
@@ -172,7 +174,12 @@ int main(void) {
                 // point a ray at each face, check collision, and place on the face it collides with
                 // which is closest to the camera
                 Faces collision_face = get_face_collisions(crosshair_ray, target_block, &camera);
-                place_on_face(collision_face, chunk, target_block, hotbar_slots[hotbar_selected]);
+                Block *block_placed = place_on_face(collision_face, chunk, target_block, hotbar_slots[hotbar_selected]);
+                if (block_placed != NULL) {
+                    block_placed->light_level = blocks_placed%5;
+                    printf("light level placed: %.1f\n", block_placed->light_level);
+                }
+                blocks_placed++;
                 num_faces += 6;
             }
         }

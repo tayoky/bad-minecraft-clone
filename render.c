@@ -6,7 +6,7 @@
 
 // Draw cube with a different texture piece applied to all faces, and returns number of faces drawn
 uint8_t DrawCubeTextureRec(Texture2D texture, Rectangle sources[6], Vector3 position, float width, float height, float length,
-                                                                                                    Color color, bool *sides_not_air){
+                                                                                                    Color color, bool *sides_not_air, int light){
     float x = position.x;
     float y = position.y;
     float z = position.z;
@@ -52,21 +52,6 @@ uint8_t DrawCubeTextureRec(Texture2D texture, Rectangle sources[6], Vector3 posi
             ret++;
         }
 
-        // Top face
-        if (!sides_not_air[FACE_TOP]) {
-            source = sources[2];
-            rlNormal3f(0.0f, 1.0f, 0.0f);
-            rlTexCoord2f(source.x/texWidth, source.y/texHeight);
-            rlVertex3f(x - width/2, y + height/2, z - length/2);
-            rlTexCoord2f(source.x/texWidth, (source.y + source.height)/texHeight);
-            rlVertex3f(x - width/2, y + height/2, z + length/2);
-            rlTexCoord2f((source.x + source.width)/texWidth, (source.y + source.height)/texHeight);
-            rlVertex3f(x + width/2, y + height/2, z + length/2);
-            rlTexCoord2f((source.x + source.width)/texWidth, source.y/texHeight);
-            rlVertex3f(x + width/2, y + height/2, z - length/2);
-            ret++;
-        }
-
         // Bottom face
         if (!sides_not_air[FACE_BOTTOM]) {
             source = sources[3];
@@ -109,6 +94,35 @@ uint8_t DrawCubeTextureRec(Texture2D texture, Rectangle sources[6], Vector3 posi
             rlVertex3f(x - width/2, y + height/2, z + length/2);
             rlTexCoord2f(source.x/texWidth, source.y/texHeight);
             rlVertex3f(x - width/2, y + height/2, z - length/2);
+            ret++;
+        }
+
+        // Top face
+        if (!sides_not_air[FACE_TOP]) {
+            source = sources[2];
+            rlNormal3f(0.0f, 1.0f, 0.0f);
+            rlTexCoord2f(source.x/texWidth, source.y/texHeight);
+            rlVertex3f(x - width/2, y + height/2, z - length/2);
+            rlTexCoord2f(source.x/texWidth, (source.y + source.height)/texHeight);
+            rlVertex3f(x - width/2, y + height/2, z + length/2);
+            rlTexCoord2f((source.x + source.width)/texWidth, (source.y + source.height)/texHeight);
+            rlVertex3f(x + width/2, y + height/2, z + length/2);
+            rlTexCoord2f((source.x + source.width)/texWidth, source.y/texHeight);
+            rlVertex3f(x + width/2, y + height/2, z - length/2);
+            ret++;
+            
+            // draw lighting cover
+            rlSetTexture(0);
+            rlColor4ub(0, 0, 0, 0xcc*(light*0.2f));
+            rlTexCoord2f(source.x/texWidth, source.y/texHeight);
+            rlVertex3f(x - width/2, y + height/2, z - length/2);
+            rlTexCoord2f(source.x/texWidth, (source.y + source.height)/texHeight);
+            rlVertex3f(x - width/2, y + height/2, z + length/2);
+            rlTexCoord2f((source.x + source.width)/texWidth, (source.y + source.height)/texHeight);
+            rlVertex3f(x + width/2, y + height/2, z + length/2);
+            rlTexCoord2f((source.x + source.width)/texWidth, source.y/texHeight);
+            rlVertex3f(x + width/2, y + height/2, z - length/2);
+            rlSetTexture(texture.id);
             ret++;
         }
 

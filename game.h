@@ -17,7 +17,7 @@ typedef struct {
     Rectangle *texture;
     BoundingBox collision_box;
     bool not_air;
-    uint8_t light_level; // 0-15
+    float light_level; // 0-15
 } Block;
 
 typedef struct {
