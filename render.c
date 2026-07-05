@@ -4,7 +4,7 @@
 #include "rlgl.h"
 #include "game.h"
 
-static bool check_air(Chunk *chunks[3][3], long x, long y, long z) {
+static Block *get_block_in_chunks(Chunk *chunks[3][3], long x, long y, long z) {
 	long chunk_x = 1;
 	long chunk_z = 1;
 
@@ -24,7 +24,11 @@ static bool check_air(Chunk *chunks[3][3], long x, long y, long z) {
 		chunk_z++;
 	}
 
-	Block *block = get_block_in_chunk(chunks[chunk_x][chunk_z], x, y, z);
+	return get_block_in_chunk(chunks[chunk_x][chunk_z], x, y, z);
+}
+
+static bool check_air(Chunk *chunks[3][3], long x, long y, long z) {
+	Block *block = get_block_in_chunks(chunks, x, y, z);
 	if (!block) {
 		// no block so it's air
 		return true;
@@ -32,7 +36,37 @@ static bool check_air(Chunk *chunks[3][3], long x, long y, long z) {
 	return block->type == BLOCK_AIR;
 }
 
-static void add_face(Mesh *mesh, Face face, Vector3 pos, Vector2 *uv1, Vector2 *uv2) {
+static float ambiant_occlusion(Chunk *chunks[3][3], Vector3 *vertex, Vector3 *normal, long x, long y, long z) {
+	float value = 0;
+
+	// corner
+	long cor_x = vertex->x == 0.0f ? x - 1 : x + 1;
+	long cor_y = vertex->y == 0.0f ? y - 1 : y + 1;
+	long cor_z = vertex->z == 0.0f ? z - 1 : z + 1;
+	if (!check_air(chunks, cor_x, cor_y, cor_z)) {
+		value += 1.0f / 4.0f;
+	}
+
+	// sides
+	if (normal->x == 0.0f) {
+		if (!check_air(chunks, x, cor_y, cor_z)) {
+			value += 1.0f / 4.0f;
+		}
+	}
+	if (normal->y == 0.0f) {
+		if (!check_air(chunks, cor_x, y, cor_z)) {
+			value += 1.0f / 4.0f;
+		}
+	}
+	if (normal->z == 0.0f) {
+		if (!check_air(chunks, cor_x, cor_y, z)) {
+			value += 1.0f / 4.0f;
+		}
+	}
+	return value;
+}
+
+static void add_face(Mesh *mesh, Chunk *chunks[3][3], Face face, Vector3 pos, long x, long y, long z, Vector2 *uv1, Vector2 *uv2) {
 	Vector3 normal;
 	Vector3 v[4];
 	switch (face) {
@@ -96,10 +130,12 @@ static void add_face(Mesh *mesh, Face face, Vector3 pos, Vector2 *uv1, Vector2 *
 	mesh->vertices  = realloc(mesh->vertices , mesh->vertexCount * 3 * sizeof(float));
 	mesh->normals   = realloc(mesh->normals  , mesh->vertexCount * 3 * sizeof(float));
 	mesh->texcoords = realloc(mesh->texcoords, mesh->vertexCount * 2 * sizeof(float));
+	mesh->colors    = realloc(mesh->colors   , mesh->vertexCount * 4 * sizeof(float));
 	mesh->indices = realloc(mesh->indices, mesh->triangleCount * 3 * sizeof(unsigned short));
 
 	// add vertices
 	for (int i=0; i<4; i++) {
+		float occlusion = ambiant_occlusion(chunks, &v[i], &normal, x, y, z);
 		mesh->vertices[(v_index + i) * 3 + 0] = v[i].x * BLOCK_SIZE + pos.x;
 		mesh->vertices[(v_index + i) * 3 + 1] = v[i].y * BLOCK_SIZE + pos.y;
 		mesh->vertices[(v_index + i) * 3 + 2] = v[i].z * BLOCK_SIZE + pos.z;
@@ -110,6 +146,11 @@ static void add_face(Mesh *mesh, Face face, Vector3 pos, Vector2 *uv1, Vector2 *
 
 		mesh->texcoords[(v_index + i) * 2 + 0] = uvs[i].x;
 		mesh->texcoords[(v_index + i) * 2 + 1] = uvs[i].y;
+
+		mesh->colors[(v_index + i) * 4 + 0] = 255.0f * (1.0f - occlusion);
+		mesh->colors[(v_index + i) * 4 + 1] = 255.0f * (1.0f - occlusion);
+		mesh->colors[(v_index + i) * 4 + 2] = 255.0f * (1.0f - occlusion);
+		mesh->colors[(v_index + i) * 4 + 3] = 255;
 	}
 
 	mesh->indices[t_index * 3 + 0] = v_index + 0;
@@ -148,7 +189,7 @@ static void generate_block_mesh(Chunk *chunk, Chunk *chunks[3][3], Block *block,
 		(texture_uvs[block->type][i].x + texture_uvs[block->type][i].width) / tex_width,
 	        (texture_uvs[block->type][i].y + texture_uvs[block->type][i].height) / tex_height,
 	    };
-	    add_face(&chunk->mesh, i, position, &uv1, &uv2);
+	    add_face(&chunk->mesh, chunks, i, position, x, y, z, &uv1, &uv2);
 	}
     }
 }
